@@ -5,7 +5,7 @@ homepage: https://github.com/dizitart/drules
 repository: https://github.com/dizitart/drules
 
 environment:
-  sdk: ^3.4.1
+  sdk: ^3.3.4
 
 dependencies:
   async: ^2.11.0
