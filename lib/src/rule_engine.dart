@@ -173,6 +173,12 @@ class RuleEngine {
         actionResult: actionResult,
       );
 
+      final results = context.getFact('results') ?? [];
+
+      context.addFact('results', results..add(ruleResult));
+
+      context.addFact('lastResult', ruleResult);
+
       var activationRecord = ActivationRecord(
         runId: Uuid().v4(),
         timestamp: DateTime.now(),
