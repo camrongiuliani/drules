@@ -126,18 +126,19 @@ class RuleEngine {
     var stopWatch = Stopwatch()..start();
     try {
       context.addFact(ruleId, rule.id);
+      context.addFact(ruleActionInfo, rule.actionInfo);
+
       conditionResult = _runCondition(rule.conditions, context);
       if (conditionResult) {
         activated = true;
         var action = rule.actionInfo.onSuccess;
         if (action != null) {
           actionResult = await _runAction(action, context);
-        } else {
-          actionResult = ActionResult(
-            output: null,
-            exception: null,
-            stackTrace: null,
-          );
+        }
+      } else {
+        var action = rule.actionInfo.onDeactivated;
+        if (action != null) {
+          actionResult = await _runAction(action, context);
         }
       }
       isSuccess = true;
@@ -166,35 +167,45 @@ class RuleEngine {
 
     stopWatch.stop();
 
-    if (activated) {
-      var ruleResult = RuleResult(
-        ruleId: rule.id,
-        isSuccess: isSuccess,
-        actionResult: actionResult,
-      );
+    final RuleResult ruleResult = RuleResult(
+      ruleId: rule.id,
+      isSuccess: isSuccess,
+      actionResult: actionResult,
+    );
 
+    var activationRecord = ActivationRecord(
+      runId: Uuid().v4(),
+      timestamp: DateTime.now(),
+      executionTime: stopWatch.elapsed,
+      facts: context.getFacts(),
+      activated: false,
+      ruleName: rule.name ?? '',
+      ruleResult: ruleResult,
+      actionInfo: rule.actionInfo,
+    );
+
+    if (activated) {
       final results = context.getFact('results') ?? [];
 
       context.addFact('results', results..add(ruleResult));
 
       context.addFact('lastResult', ruleResult);
-
-      var activationRecord = ActivationRecord(
-        runId: Uuid().v4(),
-        timestamp: DateTime.now(),
-        executionTime: stopWatch.elapsed,
-        ruleResult: ruleResult,
-        facts: context.getFacts(),
-      );
-
-      _notify(activationRecord);
     }
+
+    activationRecord = activationRecord.copyWith(
+      activated: activated,
+      facts: context.getFacts(),
+    );
+
+    _notify(activationRecord);
 
     return actionResult.shouldContinue;
   }
 
   bool _runCondition(
-      ConditionDefinition conditionDefinition, RuleContext context) {
+    ConditionDefinition conditionDefinition,
+    RuleContext context,
+  ) {
     var condition =
         _conditionRepository.findCondition(conditionDefinition.operator);
     if (condition == null) {

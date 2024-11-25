@@ -2,6 +2,42 @@ import 'package:drules/drules.dart';
 import 'package:drules/src/repository.dart';
 import 'package:template_expressions/template_expressions.dart' as t;
 
+class _Converter {
+  static dynamic convert(dynamic firstValue, dynamic secondValue) {
+    return switch (firstValue) {
+      int() => switch (secondValue) {
+          int() => secondValue,
+          String() => int.tryParse(secondValue),
+          double() => secondValue.toInt(),
+          bool() => secondValue ? 1 : 0,
+          _ => 0,
+        },
+      double() => switch (secondValue) {
+          int() => secondValue.toDouble(),
+          String() => double.tryParse(secondValue),
+          double() => secondValue,
+          bool() => secondValue ? 1.0 : 0.0,
+          _ => 0.0,
+        },
+      bool() => switch (secondValue) {
+          int() => secondValue == 1,
+          String() => secondValue == 'true',
+          double() => secondValue == 1.0,
+          bool() => secondValue,
+          _ => false,
+        },
+      String() => switch (secondValue) {
+          int() => secondValue.toString(),
+          String() => secondValue,
+          double() => secondValue.toString(),
+          bool() => secondValue ? 'true' : 'false',
+          _ => '',
+        },
+      _ => secondValue,
+    };
+  }
+}
+
 /// An abstract class representing a condition.
 ///
 /// A condition is a logical expression that evaluates to true or false.
@@ -146,14 +182,26 @@ class Eq implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
 
+    var second = _Converter.convert(firstValue, operands[1]);
+
     return firstValue == second;
+  }
+}
+
+/// Represents a condition that evaluates to true regardless of the operands.
+class Always implements Condition {
+  @override
+  String get operator => "always";
+
+  @override
+  bool evaluate(List operands, RuleContext context) {
+    return true;
   }
 }
 
@@ -173,12 +221,13 @@ class Neq implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
+
+    var second = _Converter.convert(firstValue, operands[1]);
 
     return firstValue != second;
   }
@@ -201,12 +250,13 @@ class Gt implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
+
+    var second = _Converter.convert(firstValue, operands[1]);
 
     return firstValue > second;
   }
@@ -230,12 +280,13 @@ class Gte implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
+
+    var second = _Converter.convert(firstValue, operands[1]);
 
     return firstValue >= second;
   }
@@ -258,12 +309,13 @@ class Lt implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
+
+    var second = _Converter.convert(firstValue, operands[1]);
 
     return firstValue < second;
   }
@@ -287,12 +339,13 @@ class Lte implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
+
+    var second = _Converter.convert(firstValue, operands[1]);
 
     return firstValue <= second;
   }
@@ -346,12 +399,13 @@ class Contains implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
+
+    var second = _Converter.convert(firstValue, operands[1]);
 
     return firstValue.contains(second);
   }
@@ -375,14 +429,19 @@ class StartsWith implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
 
-    return firstValue.startsWith(second);
+    var second = _Converter.convert(firstValue, operands[1]);
+
+    return switch (firstValue) {
+      String() => firstValue.startsWith(second),
+      int() || double() => firstValue.toString().startsWith(second),
+      _ => false,
+    };
   }
 }
 
@@ -404,14 +463,19 @@ class EndsWith implements Condition {
     }
 
     var first = operands[0];
-    var second = operands[1];
     var firstValue = context.getFact(first);
 
     if (firstValue == null) {
       return false;
     }
 
-    return firstValue.endsWith(second);
+    var second = _Converter.convert(firstValue, operands[1]);
+
+    return switch (firstValue) {
+      String() => firstValue.endsWith(second),
+      int() || double() => firstValue.toString().endsWith(second),
+      _ => false,
+    };
   }
 }
 

@@ -1,3 +1,4 @@
+import 'package:drules/drules.dart';
 import 'package:drules/src/rule.dart';
 import 'package:template_expressions/template_expressions.dart';
 
@@ -19,6 +20,8 @@ class RuleContext {
 
   /// Returns the current rule ID.
   String? get currentRuleId => _facts._dataMap[ruleId];
+
+  ActionInfo get currentActionInfo => _facts._dataMap[ruleActionInfo];
 
   /// Returns the value of a fact with the specified key.
   ///

@@ -136,6 +136,7 @@ class ConditionRepository {
     registerCondition(None());
     registerCondition(Eq());
     registerCondition(Neq());
+    registerCondition(Always());
     registerCondition(Gt());
     registerCondition(Gte());
     registerCondition(Lt());

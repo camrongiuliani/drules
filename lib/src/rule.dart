@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 
 /// @nodoc
 const ruleId = 'ruleId';
+const ruleActionInfo = 'ruleActionInfo';
 
 /// Exception thrown by the Rule Engine.
 class RuleEngineException implements Exception {
@@ -144,7 +145,10 @@ class ConditionDefinition {
   /// Converts the [ConditionDefinition] object to a JSON object.
   static ConditionDefinition fromJson(Map<String, dynamic> json) {
     var operator = json['operator'] as String;
-    var operands = json['operands'] as List;
+    var operands = switch (operator == 'always') {
+      true => [],
+      false => json['operands'] as List,
+    };
     return ConditionDefinition(operator: operator, operands: operands);
   }
 }
@@ -164,13 +168,17 @@ class ActionInfo {
   /// The action to be executed when the rule execution fails due to an error.
   final ActionDefinition? onFailure;
 
-  ActionInfo({this.onSuccess, this.onFailure});
+  /// The action to be executed when the rule is deactivated due to condition not met.
+  final ActionDefinition? onDeactivated;
+
+  ActionInfo({this.onSuccess, this.onFailure, this.onDeactivated});
 
   /// Converts the [ActionInfo] object to a JSON object.
   Map<String, dynamic> toJson() {
     return {
       'onSuccess': onSuccess?.toJson(),
       'onFailure': onFailure?.toJson(),
+      'onDeactivated': onDeactivated?.toJson(),
     };
   }
 
@@ -182,7 +190,14 @@ class ActionInfo {
     var onFailure = json['onFailure'] != null
         ? ActionDefinition.fromJson(json['onFailure'])
         : null;
-    return ActionInfo(onSuccess: onSuccess, onFailure: onFailure);
+    var onDeactivated = json['onDeactivated'] != null
+        ? ActionDefinition.fromJson(json['onDeactivated'])
+        : null;
+    return ActionInfo(
+      onSuccess: onSuccess,
+      onFailure: onFailure,
+      onDeactivated: onDeactivated,
+    );
   }
 }
 
