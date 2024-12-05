@@ -59,6 +59,13 @@ abstract class JsonRuleRepository implements RuleRepository {
       return null;
     }
     var ruleMap = jsonDecode(jsonRule);
+
+    if (ruleMap['enabled'] == 'true') {
+      ruleMap['enabled'] = true;
+    } else if (ruleMap['enabled'] == 'false') {
+      ruleMap['enabled'] = false;
+    }
+
     return Rule.fromJson(ruleMap);
   }
 
