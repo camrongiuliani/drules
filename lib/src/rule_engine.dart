@@ -202,7 +202,11 @@ class RuleEngine {
 
     _notify(activationRecord);
 
-    return actionResult.shouldContinue && !breakOnActivation;
+    if (activated && breakOnActivation) {
+      return false;
+    }
+
+    return actionResult.shouldContinue;
   }
 
   bool _runCondition(
