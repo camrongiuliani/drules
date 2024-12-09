@@ -94,7 +94,10 @@ class RuleEngine {
   /// Runs the rule engine with the given context.
   ///
   /// The rule engine evaluates all rules in descending order of priority.
-  Future<void> run(RuleContext context) async {
+  Future<void> run({
+    required RuleContext context,
+    bool breakOnActivation = false,
+  }) async {
     var rules = await _ruleRepository.findAllRules();
 
     // take only enabled rules
@@ -104,7 +107,7 @@ class RuleEngine {
     rules.sort((a, b) => b.priority.compareTo(a.priority));
 
     for (var rule in rules) {
-      var shouldContinue = await _runRule(rule, context);
+      var shouldContinue = await _runRule(rule, context, breakOnActivation);
 
       if (!shouldContinue) {
         // check if the rule is marked as shouldContinue = false
@@ -113,7 +116,7 @@ class RuleEngine {
     }
   }
 
-  Future<bool> _runRule(Rule rule, RuleContext context) async {
+  Future<bool> _runRule(Rule rule, RuleContext context, bool breakOnActivation) async {
     var conditionResult = false;
     var isSuccess = false;
     var activated = false;
@@ -199,7 +202,7 @@ class RuleEngine {
 
     _notify(activationRecord);
 
-    return actionResult.shouldContinue;
+    return actionResult.shouldContinue && !breakOnActivation;
   }
 
   bool _runCondition(
